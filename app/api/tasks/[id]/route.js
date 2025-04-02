@@ -1,0 +1,216 @@
+// app/api/tasks/[id]/route.js
+import { google } from "googleapis";
+import path from "path";
+import fs from "fs";
+
+const sheets = google.sheets("v4");
+
+const getAuthClient = () => {
+  try {
+    const credentialsPath = path.resolve("config", "credentials.json");
+    
+    if (!fs.existsSync(credentialsPath)) {
+      throw new Error(`Credentials file not found at ${credentialsPath}`);
+    }
+    
+    const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf8"));
+    
+    const auth = new google.auth.JWT(
+      credentials.client_email,
+      undefined,
+      credentials.private_key,
+      ["https://www.googleapis.com/auth/spreadsheets"]
+    );
+    
+    return auth;
+  } catch (error) {
+    console.error("Auth client error:", error);
+    throw error;
+  }
+};
+
+const SPREADSHEET_ID = "1-8ecZHOSpWv29shfgFUuL-DQb_fuoBj7kJLIvZmmNZc";
+
+// Helper function to get sheet title
+const getSheetTitle = async (auth) => {
+  const spreadsheet = await sheets.spreadsheets.get({
+    auth,
+    spreadsheetId: SPREADSHEET_ID
+  });
+  
+  const taskSheet = spreadsheet.data.sheets.find(
+    sheet => sheet.properties.title === "TaskManager"
+  ) || spreadsheet.data.sheets[0];
+  
+  return taskSheet.properties.title;
+};
+
+// Helper function to find a task by id
+const findTask = async (auth, sheetTitle, id) => {
+  const range = `${sheetTitle}!A1:F1000`;
+  const response = await sheets.spreadsheets.values.get({
+    auth,
+    spreadsheetId: SPREADSHEET_ID,
+    range,
+  });
+  
+  const rows = response.data.values || [];
+  if (rows.length <= 1) return { found: false }; // No tasks
+  
+  const headers = rows[0];
+  
+  // Find the row with matching id
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === id) {
+      return { 
+        found: true, 
+        rowIndex: i + 1, // 1-based index for sheets API
+        headers
+      };
+    }
+  }
+  
+  return { found: false };
+};
+
+// PUT - Update task
+export async function PUT(req, { params }) {
+  try {
+    const { id } = params;
+    const taskData = await req.json();
+    
+    if (!taskData.title) {
+      return new Response(JSON.stringify({ error: "Title is required" }), { status: 400 });
+    }
+    
+    const auth = getAuthClient();
+    const sheetTitle = await getSheetTitle(auth);
+    const { found, rowIndex, headers } = await findTask(auth, sheetTitle, id);
+    
+    if (!found) {
+      return new Response(JSON.stringify({ error: "Task not found" }), { status: 404 });
+    }
+    
+    // Prepare updated row data
+    const updatedRow = [
+      id, // Keep the original ID
+      taskData.title,
+      taskData.description || "",
+      taskData.date || new Date().toISOString(),
+      taskData.priority || "Medium",
+      taskData.status || "Pending"
+    ];
+    
+    // Update the row
+    await sheets.spreadsheets.values.update({
+      auth,
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${sheetTitle}!A${rowIndex}:F${rowIndex}`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [updatedRow] },
+    });
+    
+    return new Response(JSON.stringify({ 
+      message: "Task updated successfully"
+    }), { status: 200 });
+  } catch (error) {
+    console.error("PUT error details:", error);
+    return new Response(JSON.stringify({ 
+      error: "Failed to update task", 
+      details: error.message
+    }), { status: 500 });
+  }
+}
+
+// DELETE - Delete task
+export async function DELETE(req, { params }) {
+  try {
+    const { id } = params;
+    
+    const auth = getAuthClient();
+    const sheetTitle = await getSheetTitle(auth);
+    const { found, rowIndex } = await findTask(auth, sheetTitle, id);
+    
+    if (!found) {
+      return new Response(JSON.stringify({ error: "Task not found" }), { status: 404 });
+    }
+    
+    // Get the spreadsheet ID
+    const spreadsheet = await sheets.spreadsheets.get({
+      auth,
+      spreadsheetId: SPREADSHEET_ID
+    });
+    
+    const sheetId = spreadsheet.data.sheets.find(
+      sheet => sheet.properties.title === sheetTitle
+    ).properties.sheetId;
+    
+    // Delete the row by making a batchUpdate request
+    await sheets.spreadsheets.batchUpdate({
+      auth,
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId: sheetId,
+                dimension: "ROWS",
+                startIndex: rowIndex - 1, // 0-based index for batchUpdate
+                endIndex: rowIndex // exclusive end index
+              }
+            }
+          }
+        ]
+      }
+    });
+    
+    return new Response(JSON.stringify({ 
+      message: "Task deleted successfully"
+    }), { status: 200 });
+  } catch (error) {
+    console.error("DELETE error details:", error);
+    return new Response(JSON.stringify({ 
+      error: "Failed to delete task", 
+      details: error.message
+    }), { status: 500 });
+  }
+}
+
+// GET - Get a single task by ID
+export async function GET(req, { params }) {
+  try {
+    const { id } = params;
+    
+    const auth = getAuthClient();
+    const sheetTitle = await getSheetTitle(auth);
+    const { found, rowIndex, headers } = await findTask(auth, sheetTitle, id);
+    
+    if (!found) {
+      return new Response(JSON.stringify({ error: "Task not found" }), { status: 404 });
+    }
+    
+    // Get the task data
+    const range = `${sheetTitle}!A${rowIndex}:F${rowIndex}`;
+    const response = await sheets.spreadsheets.values.get({
+      auth,
+      spreadsheetId: SPREADSHEET_ID,
+      range,
+    });
+    
+    const taskData = response.data.values?.[0] || [];
+    
+    const task = {};
+    headers.forEach((header, index) => {
+      task[header] = taskData[index] || "";
+    });
+    
+    return new Response(JSON.stringify(task), { status: 200 });
+  } catch (error) {
+    console.error("GET error details:", error);
+    return new Response(JSON.stringify({ 
+      error: "Failed to get task", 
+      details: error.message
+    }), { status: 500 });
+  }
+}
