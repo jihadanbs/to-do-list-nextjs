@@ -459,10 +459,10 @@ export default function Home() {
       <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogTitle>Konfirmasi Hapus Task</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>Are you sure you want to delete this task? This action cannot be undone.</p>
+            <p>Sayang yakin ingin menghapus tugas ini? Tindakan ini tidak dapat dibatalkan lo ayang !</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)}>Cancel</Button>
