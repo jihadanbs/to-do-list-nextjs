@@ -3,18 +3,31 @@ import { google } from "googleapis";
 import path from "path";
 import fs from "fs";
 
+// Fungsi untuk mendekode kredensial Base64 dan menyimpannya sebagai file JSON
+const decodeBase64ToJSON = () => {
+  const base64Credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
+  if (!base64Credentials) {
+    throw new Error("Base64 credentials not found in environment variables.");
+  }
+
+  const jsonString = Buffer.from(base64Credentials, "base64").toString("utf-8");
+  const credentialsPath = path.resolve("config", "credentials.json");
+
+  fs.writeFileSync(credentialsPath, jsonString);
+  console.log("Credentials file saved successfully.");
+  
+  return credentialsPath;
+};
+
 // Mendapatkan client otentikasi
 const sheets = google.sheets("v4");
 
 const getAuthClient = () => {
   try {
-    const credentialsPath = path.resolve("config", "credentials.json");
+    // Mendekode kredensial Base64 dan simpan sebagai file JSON
+    const credentialsPath = decodeBase64ToJSON();
     console.log("Looking for credentials at:", credentialsPath);
-    
-    if (!fs.existsSync(credentialsPath)) {
-      throw new Error(`Credentials file not found at ${credentialsPath}`);
-    }
-    
+
     const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf8"));
     
     const auth = new google.auth.JWT(
@@ -31,7 +44,7 @@ const getAuthClient = () => {
   }
 };
 
-const SPREADSHEET_ID = "1-8ecZHOSpWv29shfgFUuL-DQb_fuoBj7kJLIvZmmNZc"; // ID dari Google Sheets Anda
+const SPREADSHEET_ID = "1-8ecZHOSpWv29shfgFUuL-DQb_fuoBj7kJLIvZmmNZc";
 
 // Helper function to get sheet title
 const getSheetTitle = async (auth) => {
