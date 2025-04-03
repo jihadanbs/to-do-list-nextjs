@@ -11,8 +11,14 @@ const decodeBase64ToJSON = () => {
   }
 
   const jsonString = Buffer.from(base64Credentials, "base64").toString("utf-8");
-  const credentialsPath = path.resolve("config", "credentials.json");
-
+  
+  // Pastikan direktori config ada
+  const configDir = path.resolve("config");
+  if (!fs.existsSync(configDir)) {
+    fs.mkdirSync(configDir, { recursive: true });
+  }
+  
+  const credentialsPath = path.resolve(configDir, "credentials.json");
   fs.writeFileSync(credentialsPath, jsonString);
   console.log("Credentials file saved successfully.");
   
@@ -24,11 +30,13 @@ const sheets = google.sheets("v4");
 
 const getAuthClient = () => {
   try {
-    // Mendekode kredensial Base64 dan simpan sebagai file JSON
-    const credentialsPath = decodeBase64ToJSON();
-    console.log("Looking for credentials at:", credentialsPath);
+    const base64Credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
+    if (!base64Credentials) {
+      throw new Error("Base64 credentials not found in environment variables.");
+    }
 
-    const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf8"));
+    const jsonString = Buffer.from(base64Credentials, "base64").toString("utf-8");
+    const credentials = JSON.parse(jsonString);
     
     const auth = new google.auth.JWT(
       credentials.client_email,
