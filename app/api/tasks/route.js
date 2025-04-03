@@ -12,7 +12,6 @@ const decodeBase64ToJSON = () => {
 
   const jsonString = Buffer.from(base64Credentials, "base64").toString("utf-8");
   
-  // Pastikan direktori config ada
   const configDir = path.resolve("config");
   if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
