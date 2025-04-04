@@ -1,28 +1,4 @@
-// app/api/tasks/[id]/route.js
 import { google } from "googleapis";
-import path from "path";
-import fs from "fs";
-
-// Fungsi untuk mendekode kredensial Base64 dan menyimpannya sebagai file JSON
-const decodeBase64ToJSON = () => {
-  const base64Credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
-  if (!base64Credentials) {
-    throw new Error("Base64 credentials not found in environment variables.");
-  }
-
-  const jsonString = Buffer.from(base64Credentials, "base64").toString("utf-8");
-  
-  const configDir = path.resolve("config");
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-  }
-  
-  const credentialsPath = path.resolve(configDir, "credentials.json");
-  fs.writeFileSync(credentialsPath, jsonString);
-  console.log("Credentials file saved successfully.");
-  
-  return credentialsPath;
-};
 
 const sheets = google.sheets("v4");
 
