@@ -504,8 +504,9 @@ export default function Home() {
           
           {/* View Mode Tabs */}
           <Tabs value={viewMode} onValueChange={handleViewModeChange} className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <TabsList>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+              {/* Tabs List */}
+              <TabsList className="mb-2 md:mb-0">
                 <TabsTrigger value="list">
                   <List className="w-4 h-4 mr-2" /> Daftar
                 </TabsTrigger>
@@ -519,21 +520,21 @@ export default function Home() {
                   <CalendarIcon className="w-4 h-4 mr-2" /> Bulan
                 </TabsTrigger>
               </TabsList>
-              
+
+              {/* Navigasi Tanggal */}
               {viewMode !== "list" && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 md:ml-auto">
                   <Button size="sm" variant="outline" onClick={goToPreviousDate}>
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <div className="font-medium">
-                    {formatDateRange()}
-                  </div>
+                  <div className="font-medium">{formatDateRange()}</div>
                   <Button size="sm" variant="outline" onClick={goToNextDate}>
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
               )}
             </div>
+
             
             {/* Filter Controls - Only show in list view */}
             {viewMode === "list" && (
