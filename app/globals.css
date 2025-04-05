@@ -123,3 +123,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes marquee {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.marquee {
+  white-space: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.marquee-text {
+  display: inline-block;
+  animation: marquee 30s linear infinite;
+  transform: translateY(-15%);
+}
+
