@@ -189,6 +189,38 @@ export default function Home() {
     
     setFilteredTasks(result);
   };
+
+  // Fungsi untuk mendapatkan waktu saat ini dalam format HH:MM berdasarkan timezone Jakarta
+  const getCurrentJakartaTime = () => {
+    const now = new Date();
+    // Menggunakan opsi timeZone Asia/Jakarta untuk mendapatkan waktu Jakarta
+    const jakartaTime = now.toLocaleTimeString('en-US', { 
+      timeZone: 'Asia/Jakarta',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    return jakartaTime;
+  };
+
+  // Fungsi untuk mendapatkan waktu selesai default (1 jam setelah waktu mulai)
+  const getDefaultEndTime = (startTime) => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    
+    const endDate = new Date();
+    endDate.setHours(hours + 1, minutes, 0);
+    
+    return endDate.toLocaleTimeString('en-US', {
+      timeZone: 'Asia/Jakarta',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // State untuk waktu mulai dan waktu selesai
+  const [taskStartTime, setTaskStartTime] = useState(getCurrentJakartaTime());
+  const [taskEndTime, setTaskEndTime] = useState(getDefaultEndTime(getCurrentJakartaTime()));
   
   const resetFilters = () => {
     setSearchTerm("");
@@ -200,6 +232,9 @@ export default function Home() {
     setTaskTitle("");
     setTaskDescription("");
     setTaskDate(new Date());
+    const currentTime = getCurrentJakartaTime();
+    setTaskStartTime(currentTime);
+    setTaskEndTime(getDefaultEndTime(currentTime));
     setTaskPriority("Medium");
     setTaskStatus("Pending");
     setCurrentTaskId(null);
@@ -221,6 +256,8 @@ export default function Home() {
     setTaskTitle(task.title);
     setTaskDescription(task.description || "");
     setTaskDate(new Date(task.date));
+    setTaskStartTime(task.startTime || "");
+    setTaskEndTime(task.endTime || "");
     setTaskPriority(task.priority);
     setTaskStatus(task.status);
     setIsDialogOpen(true);
@@ -244,6 +281,8 @@ export default function Home() {
       title: taskTitle,
       description: taskDescription,
       date: taskDate.toISOString(),
+      startTime: taskStartTime,
+      endTime: taskEndTime,
       priority: taskPriority,
       status: taskStatus
     };
@@ -251,10 +290,10 @@ export default function Home() {
     try {
       if (isEditMode) {
         await axios.put(`/api/tasks/${currentTaskId}`, taskData);
-        toast.success("Tugas berhasil diperbarui");
+        toast.success("Tugas berhasil diperbarui !");
       } else {
         await axios.post("/api/tasks", taskData);
-        toast.success("Tugas berhasil ditambahkan");
+        toast.success("Tugas berhasil ditambahkan !");
       }
       
       setIsDialogOpen(false);
@@ -264,8 +303,8 @@ export default function Home() {
       console.error("Error saving task:", error);
       toast.error(
         isEditMode
-          ? "Gagal memperbarui tugas. Silakan coba lagi."
-          : "Gagal menambahkan tugas. Silakan coba lagi."
+          ? "Gagal memperbarui tugas. Silakan coba lagi !"
+          : "Gagal menambahkan tugas. Silakan coba lagi !"
       );
     } finally {
       setLoading(false);
@@ -598,7 +637,7 @@ export default function Home() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Judul</TableHead>
-                        <TableHead>Tanggal</TableHead>
+                        <TableHead>Tanggal dan Waktu</TableHead>
                         <TableHead>Prioritas</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="w-[100px]">Aksi</TableHead>
@@ -621,6 +660,11 @@ export default function Home() {
                             <div className="flex items-center">
                               <CalendarIcon className="mr-2 h-4 w-4 text-gray-400" />
                               {format(new Date(task.date), "d MMM yyyy", { locale: id })}
+                              {task.startTime && task.endTime && (
+                                <span className="ml-2 text-sm text-gray-500">
+                                  {task.startTime} - {task.endTime}
+                                </span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -819,6 +863,32 @@ export default function Home() {
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="startTime" className="text-sm font-medium">
+                  Jam Mulai
+                </label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={taskStartTime}
+                  onChange={(e) => setTaskStartTime(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="endTime" className="text-sm font-medium">
+                  Jam Selesai
+                </label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={taskEndTime}
+                  onChange={(e) => setTaskEndTime(e.target.value)}
+                />
+              </div>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

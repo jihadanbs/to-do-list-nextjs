@@ -47,7 +47,7 @@ const getSheetTitle = async (auth) => {
 // Function to ensure the sheet has the correct headers
 const ensureHeaders = async (auth, sheetTitle) => {
   try {
-    const range = `${sheetTitle}!A1:F1`;
+    const range = `${sheetTitle}!A1:H1`;
     const response = await sheets.spreadsheets.values.get({
       auth,
       spreadsheetId: SPREADSHEET_ID,
@@ -55,7 +55,7 @@ const ensureHeaders = async (auth, sheetTitle) => {
     });
 
     const headers = response.data.values?.[0] || [];
-    const requiredHeaders = ["id", "title", "description", "date", "priority", "status"];
+    const requiredHeaders = ["id", "title", "description", "date", "startTime", "endTime", "priority", "status"];
     
     // If headers don't exist or are incorrect, create them
     if (headers.length !== requiredHeaders.length || 
@@ -148,7 +148,7 @@ export async function GET(req) {
     const sheetTitle = await getSheetTitle(auth);
     await ensureHeaders(auth, sheetTitle);
     
-    const range = `${sheetTitle}!A1:F1000`;
+    const range = `${sheetTitle}!A1:H1000`;
     const response = await sheets.spreadsheets.values.get({
       auth,
       spreadsheetId: SPREADSHEET_ID,
@@ -213,6 +213,8 @@ export async function POST(req) {
       taskData.title,
       taskData.description || "",
       taskData.date || new Date().toISOString(),
+      taskData.startTime || "",
+      taskData.endTime || "",
       taskData.priority || "Medium",
       taskData.status || "Pending"
     ];
@@ -221,7 +223,7 @@ export async function POST(req) {
     await sheets.spreadsheets.values.append({
       auth,
       spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetTitle}!A:F`,
+      range: `${sheetTitle}!A:H`,
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [newRow] },
     });
@@ -253,7 +255,7 @@ export async function PUT(req, { params }) {
     const sheetTitle = await getSheetTitle(auth);
     
     // Get all tasks to find the row number of the target task
-    const range = `${sheetTitle}!A1:F1000`;
+    const range = `${sheetTitle}!A1:H1000`;
     const response = await sheets.spreadsheets.values.get({
       auth,
       spreadsheetId: SPREADSHEET_ID,
@@ -284,15 +286,17 @@ export async function PUT(req, { params }) {
       taskData.title || rows[rowIndex - 1][1],
       taskData.description !== undefined ? taskData.description : rows[rowIndex - 1][2],
       taskData.date || rows[rowIndex - 1][3],
-      taskData.priority || rows[rowIndex - 1][4],
-      taskData.status || rows[rowIndex - 1][5]
+      taskData.startTime || rows[rowIndex - 1][4],
+      taskData.endTime || rows[rowIndex - 1][5],
+      taskData.priority || rows[rowIndex - 1][6],
+      taskData.status || rows[rowIndex - 1][7]
     ];
     
     // Update the row
     await sheets.spreadsheets.values.update({
       auth,
       spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetTitle}!A${rowIndex}:F${rowIndex}`,
+      range: `${sheetTitle}!A${rowIndex}:H${rowIndex}`,
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [updatedRow] },
     });
@@ -322,7 +326,7 @@ export async function DELETE(req, { params }) {
     const sheetTitle = await getSheetTitle(auth);
     
     // Get all tasks to find the row number of the target task
-    const range = `${sheetTitle}!A1:F1000`;
+    const range = `${sheetTitle}!A1:H1000`;
     const response = await sheets.spreadsheets.values.get({
       auth,
       spreadsheetId: SPREADSHEET_ID,
@@ -351,7 +355,7 @@ export async function DELETE(req, { params }) {
     await sheets.spreadsheets.values.clear({
       auth,
       spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetTitle}!A${rowIndex}:F${rowIndex}`,
+      range: `${sheetTitle}!A${rowIndex}:H${rowIndex}`,
     });
     
     return new Response(JSON.stringify({ 

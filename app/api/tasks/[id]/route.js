@@ -94,6 +94,8 @@ export async function PUT(req, { params }) {
       taskData.title,
       taskData.description || "",
       taskData.date || new Date().toISOString(),
+      taskData.startTime || "",
+      taskData.endTime || "",
       taskData.priority || "Medium",
       taskData.status || "Pending"
     ];
@@ -102,7 +104,7 @@ export async function PUT(req, { params }) {
     await sheets.spreadsheets.values.update({
       auth,
       spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetTitle}!A${rowIndex}:F${rowIndex}`,
+      range: `${sheetTitle}!A${rowIndex}:H${rowIndex}`,
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [updatedRow] },
     });
