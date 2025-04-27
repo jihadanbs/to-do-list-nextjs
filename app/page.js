@@ -193,34 +193,35 @@ export default function Home() {
   // Fungsi untuk mendapatkan waktu saat ini dalam format HH:MM berdasarkan timezone Jakarta
   const getCurrentJakartaTime = () => {
     const now = new Date();
-    // Menggunakan opsi timeZone Asia/Jakarta untuk mendapatkan waktu Jakarta
-    const jakartaTime = now.toLocaleTimeString('en-US', { 
-      timeZone: 'Asia/Jakarta',
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    return jakartaTime;
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   };
 
   // Fungsi untuk mendapatkan waktu selesai default (1 jam setelah waktu mulai)
   const getDefaultEndTime = (startTime) => {
-    const [hours, minutes] = startTime.split(':').map(Number);
+    if (!startTime) return getCurrentJakartaTime();
     
-    const endDate = new Date();
-    endDate.setHours(hours + 1, minutes, 0);
-    
-    return endDate.toLocaleTimeString('en-US', {
-      timeZone: 'Asia/Jakarta',
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    let [hours, minutes] = startTime.split(':').map(Number);
+    hours = (hours + 1) % 24;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
-
+  
   // State untuk waktu mulai dan waktu selesai
   const [taskStartTime, setTaskStartTime] = useState(getCurrentJakartaTime());
   const [taskEndTime, setTaskEndTime] = useState(getDefaultEndTime(getCurrentJakartaTime()));
+
+  // Fungsi untuk memastikan format waktu dengan leading zero
+  const formatTimeForInput = (timeString) => {
+    if (!timeString) return "";
+    
+    // Jika waktu sudah dalam format yang benar, return apa adanya
+    if (timeString.includes(":") && timeString.length === 5) return timeString;
+    
+    // Jika format waktu adalah "9:00", ubah ke "09:00"
+    const [hours, minutes] = timeString.split(":");
+    return `${hours.padStart(2, '0')}:${minutes}`;
+  };
   
   const resetFilters = () => {
     setSearchTerm("");
@@ -251,13 +252,13 @@ export default function Home() {
     setIsEditMode(false);
   };
   
-  const openEditDialog = (task) => {
+  const openEditDialog = (task) => { 
     setCurrentTaskId(task.id);
     setTaskTitle(task.title);
     setTaskDescription(task.description || "");
     setTaskDate(new Date(task.date));
-    setTaskStartTime(task.startTime || "");
-    setTaskEndTime(task.endTime || "");
+    setTaskStartTime(formatTimeForInput(task.startTime || getCurrentJakartaTime()));
+    setTaskEndTime(formatTimeForInput(task.endTime || getDefaultEndTime(task.startTime || getCurrentJakartaTime())));
     setTaskPriority(task.priority);
     setTaskStatus(task.status);
     setIsDialogOpen(true);

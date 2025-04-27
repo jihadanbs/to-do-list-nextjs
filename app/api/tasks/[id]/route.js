@@ -44,7 +44,7 @@ const getSheetTitle = async (auth) => {
 
 // Helper function to find a task by id
 const findTask = async (auth, sheetTitle, id) => {
-  const range = `${sheetTitle}!A1:F1000`;
+  const range = `${sheetTitle}!A1:H1000`;
   const response = await sheets.spreadsheets.values.get({
     auth,
     spreadsheetId: SPREADSHEET_ID,
@@ -94,8 +94,8 @@ export async function PUT(req, { params }) {
       taskData.title,
       taskData.description || "",
       taskData.date || new Date().toISOString(),
-      taskData.startTime || "",
-      taskData.endTime || "",
+      taskData.startTime,
+      taskData.endTime,
       taskData.priority || "Medium",
       taskData.status || "Pending"
     ];
@@ -190,7 +190,7 @@ export async function GET(req, { params }) {
     }
     
     // Get the task data
-    const range = `${sheetTitle}!A${rowIndex}:F${rowIndex}`;
+    const range = `${sheetTitle}!A${rowIndex}:H${rowIndex}`;
     const response = await sheets.spreadsheets.values.get({
       auth,
       spreadsheetId: SPREADSHEET_ID,
