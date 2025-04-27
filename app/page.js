@@ -470,12 +470,6 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="w-full mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded shadow marquee">
-            <span className="marquee-text font-semibold">
-              YANG LAIN UDA PADA LULUS, PRESSURE 😭 • YANG LAIN UDA PADA LULUS, PRESSURE 😭 • YANG LAIN UDA PADA LULUS, PRESSURE 😭 • YANG LAIN UDA PADA LULUS, PRESSURE 😭 • 
-            </span>
-          </div>
-          
           {/* Dashboard Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
