@@ -3,7 +3,7 @@ import { google } from "googleapis";
 // Mendapatkan client otentikasi
 const sheets = google.sheets("v4");
 
-const getAuthClient = () => {
+const getAuthClient = async () => {
   try {
     const base64Credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
     if (!base64Credentials) {
@@ -12,14 +12,15 @@ const getAuthClient = () => {
 
     const jsonString = Buffer.from(base64Credentials, "base64").toString("utf-8");
     const credentials = JSON.parse(jsonString);
-    
-    const auth = new google.auth.JWT(
-      credentials.client_email,
-      undefined,
-      credentials.private_key,
-      ["https://www.googleapis.com/auth/spreadsheets"]
-    );
-    
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key.replace(/\\n/g, "\n"),
+      },
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+
     return auth;
   } catch (error) {
     console.error("Auth client error:", error);
@@ -144,7 +145,7 @@ const parseURLSearchParams = (url) => {
 // GET - Fetch all tasks with optional date filtering
 export async function GET(req) {
   try {
-    const auth = getAuthClient();
+    const auth = await getAuthClient();
     const sheetTitle = await getSheetTitle(auth);
     await ensureHeaders(auth, sheetTitle);
     
@@ -200,7 +201,7 @@ export async function POST(req) {
       return new Response(JSON.stringify({ error: "Title is required" }), { status: 400 });
     }
     
-    const auth = getAuthClient();
+    const auth = await getAuthClient();
     const sheetTitle = await getSheetTitle(auth);
     await ensureHeaders(auth, sheetTitle);
     
@@ -251,7 +252,7 @@ export async function PUT(req, { params }) {
       return new Response(JSON.stringify({ error: "Task ID is required" }), { status: 400 });
     }
     
-    const auth = getAuthClient();
+    const auth = await getAuthClient();
     const sheetTitle = await getSheetTitle(auth);
     
     // Get all tasks to find the row number of the target task
@@ -322,7 +323,7 @@ export async function DELETE(req, { params }) {
       return new Response(JSON.stringify({ error: "Task ID is required" }), { status: 400 });
     }
     
-    const auth = getAuthClient();
+    const auth = await getAuthClient();
     const sheetTitle = await getSheetTitle(auth);
     
     // Get all tasks to find the row number of the target task

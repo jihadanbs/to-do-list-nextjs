@@ -2,7 +2,7 @@ import { google } from "googleapis";
 
 const sheets = google.sheets("v4");
 
-const getAuthClient = () => {
+const getAuthClient = async () => {
   try {
     const base64Credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
     if (!base64Credentials) {
@@ -11,14 +11,15 @@ const getAuthClient = () => {
 
     const jsonString = Buffer.from(base64Credentials, "base64").toString("utf-8");
     const credentials = JSON.parse(jsonString);
-    
-    const auth = new google.auth.JWT(
-      credentials.client_email,
-      undefined,
-      credentials.private_key,
-      ["https://www.googleapis.com/auth/spreadsheets"]
-    );
-    
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key.replace(/\\n/g, "\n"),
+      },
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+
     return auth;
   } catch (error) {
     console.error("Auth client error:", error);
@@ -80,7 +81,7 @@ export async function PUT(req, { params }) {
       return new Response(JSON.stringify({ error: "Title is required" }), { status: 400 });
     }
     
-    const auth = getAuthClient();
+    const auth = await getAuthClient();
     const sheetTitle = await getSheetTitle(auth);
     const { found, rowIndex, headers } = await findTask(auth, sheetTitle, id);
     
@@ -126,7 +127,7 @@ export async function DELETE(req, { params }) {
   try {
     const { id } = params;
     
-    const auth = getAuthClient();
+    const auth = await getAuthClient();
     const sheetTitle = await getSheetTitle(auth);
     const { found, rowIndex } = await findTask(auth, sheetTitle, id);
     
@@ -181,7 +182,7 @@ export async function GET(req, { params }) {
   try {
     const { id } = params;
     
-    const auth = getAuthClient();
+    const auth = await getAuthClient();
     const sheetTitle = await getSheetTitle(auth);
     const { found, rowIndex, headers } = await findTask(auth, sheetTitle, id);
     
