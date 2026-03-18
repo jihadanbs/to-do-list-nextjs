@@ -74,7 +74,7 @@ const findTask = async (auth, sheetTitle, id) => {
 // PUT - Update task
 export async function PUT(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const taskData = await req.json();
     
     if (!taskData.title) {
@@ -125,7 +125,7 @@ export async function PUT(req, { params }) {
 // DELETE - Delete task
 export async function DELETE(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     const auth = await getAuthClient();
     const sheetTitle = await getSheetTitle(auth);
@@ -180,7 +180,7 @@ export async function DELETE(req, { params }) {
 // GET - Get a single task by ID
 export async function GET(req, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     const auth = await getAuthClient();
     const sheetTitle = await getSheetTitle(auth);

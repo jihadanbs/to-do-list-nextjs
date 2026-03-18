@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import { sendTelegramMessage } from "@/lib/telegram";
 
 // Mendapatkan client otentikasi
 const sheets = google.sheets("v4");
@@ -228,6 +229,14 @@ export async function POST(req) {
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [newRow] },
     });
+
+    await sendTelegramMessage(
+      `🆕 <b>Tugas Baru Ditambahkan!</b>\n\n` +
+      `📌 Judul: ${taskData.title}\n` +
+      `📅 Tanggal: ${taskData.date.split('T')[0]}\n` +
+      `⏰ Waktu: ${taskData.startTime} - ${taskData.endTime}\n` +
+      `🔥 Prioritas: ${taskData.priority}`
+    );
     
     return new Response(JSON.stringify({ 
       message: "Task created successfully",
@@ -245,7 +254,7 @@ export async function POST(req) {
 // PUT - Update a task
 export async function PUT(req, { params }) {
   try {
-    const taskId = params.id;
+    const { id: taskId } = await params;
     const taskData = await req.json();
     
     if (!taskId) {
@@ -317,7 +326,7 @@ export async function PUT(req, { params }) {
 // DELETE - Delete a task
 export async function DELETE(req, { params }) {
   try {
-    const taskId = params.id;
+    const { id: taskId } = await params;
     
     if (!taskId) {
       return new Response(JSON.stringify({ error: "Task ID is required" }), { status: 400 });
